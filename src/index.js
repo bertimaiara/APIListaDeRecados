@@ -25,7 +25,6 @@ app.post("/usuarios", verificaEmail, (request, response) => {
         recados: [],
         senha: hash,
       });
-      console.log(usuarios);
     } else {
       return response.status(400).json(`Ocorreu um erro ${err}`);
     }
