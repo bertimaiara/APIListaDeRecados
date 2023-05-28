@@ -1,7 +1,9 @@
 import express from "express";
-import bcrypt from "bcrypt";
+import cors from "cors";
+import bcrypt, { hash } from "bcrypt";
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.get("/", (request, response) => {
   return response.json("OK");
@@ -34,21 +36,42 @@ app.post("/usuarios", verificaEmail, (request, response) => {
 
 // Read - lê todos os usuários
 app.get("/usuarios", (request, response) => {
-  response.status(200).json(usuarios);
   //para mostrar a informação ao front-end:
+  response.status(200).json(usuarios);
+});
+
+// Read - lê todos os usuários COM PAGINAÇÃO!!!!
+
+app.get("/usuarios", (request, response) => {
+  const pagina = request.query.pagina || 1; // pega a página que o cliente coloca ou sub-entende-se por página 1.
+  const paginas = Math.ceil(usuarios.length / 5);
+  const indice = (pagina - 1) * 5;
+  const aux = [...usuarios]; // spread operator
+  const resultado = aux.splice(indice, 5);
+
+  //para mostrar a informação ao front-end:
+  response
+    .status(201)
+    .json({ total: usuarios.length, data: resultado, paginas });
 });
 //----------------------------------------------------------------------------------------------
 //LOGIN
-app.post("/usuarios/login", (request, response) => {
-  const login = request.body;
-  const email = login.email;
-  const senha = login.senha;
+app.post("/usuarios/login", async (request, response) => {
+  const email = request.body.email;
+  const senha = request.body.senha; //valor digitado pelo usuario
 
-  const usuario = usuarios.find((usuario) => usuario.email === email);
-  if (usuario) {
-    return response.status(200).json("Usuário logado com sucesso");
+  const usuarioLogin = usuarios.find((usuario) => usuario.email === email); //.find retorna um objeto neste caso
+
+  if (!usuarioLogin) {
+    return response.status(404).json("E-mail não encontrado.");
+  }
+
+  let senhaLogin = await bcrypt.compare(senha, usuarioLogin.senha);
+
+  if (!senhaLogin) {
+    return response.status(404).json("E-mail ou senha inválido.");
   } else {
-    return response.status(402).json("Por favor, digite um email válido");
+    return response.status(200).json("Logado com sucesso.");
   }
 });
 
@@ -59,45 +82,52 @@ let recados = [];
 
 //Create - POST
 
-app.post("/usuarios/login/:id/recados", autenticacao, (request, response) => {
-  const id = Number(request.params.id);
-  const recado = request.body;
+app.post("/usuarios/:id/recados", autenticacao, (request, response) => {
+    const id = Number(request.params.id);
+    const recado = request.body;
 
-  const usuario = usuarios.find((usuario) => usuario.id === id);
+    const usuario = usuarios.find((usuario) => usuario.id === id);
 
-  if (!usuario) {
-    return response.status(404).json("Usuário não encontrado.");
+    if (!usuario) {
+      return response.status(404).json("Usuário não encontrado.");
+    }
+
+    const novoRecado = {
+      id: Math.floor(Math.random() * 6584123),
+      titulo: recado.titulo,
+      descricao: recado.descricao,
+    };
+
+    usuario.recados.push(novoRecado);
+
+    return response.status(200).json("Recado criado com sucesso");
   }
-
-  const novoRecado = {
-    id: Math.floor(Math.random() * 6584123),
-    titulo: recado.titulo,
-    descricao: recado.descricao,
-  };
-
-  usuario.recados.push(novoRecado);
-
-  return response.status(200).json("Recado criado com sucesso");
-});
+);
 
 // Read - lê todos os recados
-app.get("/usuarios/login/:id/recados", autenticacao, (request, response) => {
-  const id = Number(request.params.id);
+app.get("/usuarios/:id/recados", autenticacao, (request, response) => {
+    const id = Number(request.params.id);
 
-  const usuario = usuarios.find((usuario) => usuario.id === id);
+    const usuario = usuarios.find((usuario) => usuario.id === id);
 
-  if (!usuario) {
-    return response.status(404).json("Usuário não encontrado.");
+    if (!usuario) {
+      return response.status(404).json("Usuário não encontrado.");
+    }
+
+    const pagina = request.query.pagina || 1;
+    const paginas = Math.ceil(usuario.recados?.length / 5);
+    const indice = (pagina - 1) * 5;
+    const aux = [...usuario.recados]; // spread operator
+    const resultado = aux.splice(indice, 5);
+
+    return response
+      .status(201)
+      .json({ total: usuario.recados.length, recados: resultado, paginas });
   }
-
-  return response.status(200).json(usuario.recados);
-});
+);
 
 // Read - um recado só (route params)
-app.get(
-  "/usuarios/login/:id/recados/:idRecado",
-  validaIdRecado,
-  (request, response) => {
+app.get("/usuarios/:id/recados/:idRecado", validaIdRecado, (request, response) => {
     const usuarioId = Number(request.params.id);
     const recadoId = Number(request.params.idRecado);
 
@@ -118,10 +148,7 @@ app.get(
 );
 
 // Update - edita/atualiza informações do recado
-app.put(
-  "/usuarios/login/:id/recados/:idRecado",
-  validaIdRecado,
-  (request, response) => {
+app.put("/usuarios/:id/recados/:idRecado", validaIdRecado, (request, response) => {
     const id = Number(request.params.id);
     const idRecado = Number(request.params.idRecado);
     const recado = request.body;
@@ -148,10 +175,7 @@ app.put(
 );
 
 // Delete
-app.delete(
-  "/usuarios/login/:id/recados/:idRecado",
-  validaIdRecado,
-  (request, response) => {
+app.delete("/usuarios/:id/recados/:idRecado", validaIdRecado, (request, response) => {
     const usuarioId = Number(request.params.id);
     const recadoId = Number(request.params.idRecado);
 
