@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import bcrypt, { hash } from "bcrypt";
+import bcrypt from "bcrypt";
 
 const app = express();
 app.use(cors());
@@ -20,18 +20,19 @@ app.post("/usuarios", verificaEmail, (request, response) => {
 
   bcrypt.hash(usuario.senha, saltRounds, function (err, hash) {
     if (hash) {
-      usuarios.push({
+      const novoUsuario = {
         id: Math.floor(Math.random() * 6584123),
         nome: usuario.nome,
         email: usuario.email,
         recados: [],
         senha: hash,
-      });
+      };
+      usuarios.push(novoUsuario);
+      return response.status(201).json({ id: novoUsuario.id }); // Retorna o ID do usuário criado
     } else {
       return response.status(400).json(`Ocorreu um erro ${err}`);
     }
   });
-  return response.json("Usuário criado com sucesso");
 });
 
 // Read - lê todos os usuários
@@ -82,7 +83,7 @@ let recados = [];
 
 //Create - POST
 
-app.post("/usuarios/:id/recados", autenticacao, (request, response) => {
+app.post("/usuarios/:id/recados", (request, response) => {
     const id = Number(request.params.id);
     const recado = request.body;
 
@@ -105,7 +106,7 @@ app.post("/usuarios/:id/recados", autenticacao, (request, response) => {
 );
 
 // Read - lê todos os recados
-app.get("/usuarios/:id/recados", autenticacao, (request, response) => {
+app.get("/usuarios/:id/recados", (request, response) => {
     const id = Number(request.params.id);
 
     const usuario = usuarios.find((usuario) => usuario.id === id);
