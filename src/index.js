@@ -28,7 +28,8 @@ app.post("/usuarios", verificaEmail, (request, response) => {
         senha: hash,
       };
       usuarios.push(novoUsuario);
-      return response.status(201).json({ id: novoUsuario.id }); // Retorna o ID do usuário criado
+
+      return response.status(201).json({ novoUsuario }); // Retorna o ID do usuário criado
     } else {
       return response.status(400).json(`Ocorreu um erro ${err}`);
     }
@@ -84,51 +85,54 @@ let recados = [];
 //Create - POST
 
 app.post("/usuarios/:id/recados", (request, response) => {
-    const id = Number(request.params.id);
-    const recado = request.body;
-
-    const usuario = usuarios.find((usuario) => usuario.id === id);
-
-    if (!usuario) {
-      return response.status(404).json("Usuário não encontrado.");
-    }
-
-    const novoRecado = {
-      id: Math.floor(Math.random() * 6584123),
-      titulo: recado.titulo,
-      descricao: recado.descricao,
-    };
-
-    usuario.recados.push(novoRecado);
-
-    return response.status(200).json("Recado criado com sucesso");
+  const id = Number(request.params.id);
+  // const id = localStorage.getItem("usuario")
+  const recado = request.body;
+  console.log(usuarios);
+  console.log(id);
+  const usuario = usuarios.find((user) => user.id === id);
+  console.log(usuario);
+  if (!usuario) {
+    return response.status(404).json("Usuário não encontrado.");
   }
-);
+
+  const novoRecado = {
+    id: Math.floor(Math.random() * 6584123),
+    titulo: recado.titulo,
+    descricao: recado.descricao,
+  };
+
+  usuario.recados.push(novoRecado);
+  console.log(usuario);
+  return response.status(200).json("Recado criado com sucesso");
+});
 
 // Read - lê todos os recados
 app.get("/usuarios/:id/recados", (request, response) => {
-    const id = Number(request.params.id);
+  const id = Number(request.params.id);
 
-    const usuario = usuarios.find((usuario) => usuario.id === id);
+  const usuario = usuarios.find((usuario) => usuario.id === id);
 
-    if (!usuario) {
-      return response.status(404).json("Usuário não encontrado.");
-    }
-
-    const pagina = request.query.pagina || 1;
-    const paginas = Math.ceil(usuario.recados?.length / 5);
-    const indice = (pagina - 1) * 5;
-    const aux = [...usuario.recados]; // spread operator
-    const resultado = aux.splice(indice, 5);
-
-    return response
-      .status(201)
-      .json({ total: usuario.recados.length, recados: resultado, paginas });
+  if (!usuario) {
+    return response.status(404).json("Usuário não encontrado.");
   }
-);
+
+  const pagina = request.query.pagina || 1;
+  const paginas = Math.ceil(usuario.recados?.length / 5);
+  const indice = (pagina - 1) * 5;
+  const aux = [...usuario.recados]; // spread operator
+  const resultado = aux.splice(indice, 5);
+
+  return response
+    .status(201)
+    .json({ total: usuario.recados.length, recados: resultado, paginas });
+});
 
 // Read - um recado só (route params)
-app.get("/usuarios/:id/recados/:idRecado", validaIdRecado, (request, response) => {
+app.get(
+  "/usuarios/:id/recados/:idRecado",
+  validaIdRecado,
+  (request, response) => {
     const usuarioId = Number(request.params.id);
     const recadoId = Number(request.params.idRecado);
 
@@ -149,7 +153,10 @@ app.get("/usuarios/:id/recados/:idRecado", validaIdRecado, (request, response) =
 );
 
 // Update - edita/atualiza informações do recado
-app.put("/usuarios/:id/recados/:idRecado", validaIdRecado, (request, response) => {
+app.put(
+  "/usuarios/:id/recados/:idRecado",
+  validaIdRecado,
+  (request, response) => {
     const id = Number(request.params.id);
     const idRecado = Number(request.params.idRecado);
     const recado = request.body;
@@ -176,7 +183,10 @@ app.put("/usuarios/:id/recados/:idRecado", validaIdRecado, (request, response) =
 );
 
 // Delete
-app.delete("/usuarios/:id/recados/:idRecado", validaIdRecado, (request, response) => {
+app.delete(
+  "/usuarios/:id/recados/:idRecado",
+  validaIdRecado,
+  (request, response) => {
     const usuarioId = Number(request.params.id);
     const recadoId = Number(request.params.idRecado);
 
