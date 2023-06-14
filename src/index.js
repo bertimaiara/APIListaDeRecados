@@ -12,6 +12,7 @@ app.listen(5555, () => console.log("Servidor rodando"));
 
 // CRUD PARA CRIAR USUÁRIO
 let usuarios = [];
+let lastId = 0;
 
 //Create - POST
 app.post("/usuarios", verificaEmail, (request, response) => {
@@ -21,7 +22,7 @@ app.post("/usuarios", verificaEmail, (request, response) => {
   bcrypt.hash(usuario.senha, saltRounds, function (err, hash) {
     if (hash) {
       const novoUsuario = {
-        id: Math.floor(Math.random() * 6584123),
+        id: (lastId += 1),
         nome: usuario.nome,
         email: usuario.email,
         recados: [],
@@ -84,7 +85,7 @@ let recados = [];
 //Create - POST
 
 app.post("/usuarios/:id/recados", (request, response) => {
-    // const id = Number(request.params.id);
+    const id = Number(request.params.id);
     const recado = request.body;
     console.log(usuarios)
     console.log(id)
@@ -95,7 +96,7 @@ app.post("/usuarios/:id/recados", (request, response) => {
     }
 
     const novoRecado = {
-      id: Math.floor(Math.random() * 6584123),
+      id: (lastId += 1),
       titulo: recado.titulo,
       descricao: recado.descricao,
     };
